@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhavesh Kumar Jangir - Software Engineer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a192f;
+            color: #ccd6f6;
+            cursor: none; /* Hide default cursor */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        /* Hide scrollbar for Firefox */
+        html {
+            scrollbar-width: none;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        header, header a {
+            cursor: auto;
+        }
+        .accent-color {
+            color: #4cc9f0; /* Softer blue accent color */
+        }
+        .highlight-bg {
+            background-color: #112240;
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            background-color: #4cc9f0; /* Softer blue accent color */
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover {
+            color: #4cc9f0; /* Softer blue accent color */
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Canvas for animations */
+        #cursor-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000; /* Placed on top of everything */
+            pointer-events: none; /* Allows clicking through canvas */
+        }
+        #bg-bubbles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Behind content, in front of bg color */
+            pointer-events: auto;
+        }
+
+        /* Avatar */
+        #scroll-avatar {
+            position: fixed;
+            top: 0; 
+            left: 0;
+            width: 40px;
+            height: 60px;
+            z-index: 0; /* CORRECTED: z-index must be higher than header (50) */
+            will-change: transform; /* Performance optimization */
+            pointer-events: none; /* So it doesn't interfere with clicks */
+        }
+        
+        #scroll-avatar svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* CORRECTED: Invalid rgba alpha values replaced with correct fill */
+        .avatar-body { fill: rgba(150, 150, 150, 10) }
+        .avatar-limb {
+            fill: rgba(23, 107, 135, 10);
+            transform-origin: 50% 10%; /* pivot point for swinging */
+            animation-play-state: paused; /* Animation is paused by default */
+        }
+
+        #scroll-avatar.is-moving .avatar-limb {
+            animation-play-state: running; /* Animation runs only when moving */
+        }
+
+        .arm-back { animation: walk-arm-back 0.8s infinite ease-in-out; }
+        .leg-back { animation: walk-leg-back 0.8s infinite ease-in-out; }
+        .arm-front { animation: walk-arm-front 0.8s infinite ease-in-out; }
+        .leg-front { animation: walk-leg-front 0.8s infinite ease-in-out; }
+        
+        @keyframes walk-arm-front {
+            0% { transform: rotate(20deg); }
+            50% { transform: rotate(-20deg); }
+            100% { transform: rotate(20deg); }
+        }
+        @keyframes walk-arm-back {
+            0% { transform: rotate(-20deg); }
+            50% { transform: rotate(20deg); }
+            100% { transform: rotate(-20deg); }
+        }
+        @keyframes walk-leg-front {
+            0% { transform: rotate(25deg); }
+            50% { transform: rotate(-25deg); }
+            100% { transform: rotate(25deg); }
+        }
+        @keyframes walk-leg-back {
+            0% { transform: rotate(-25deg); }
+            50% { transform: rotate(25deg); }
+            100% { transform: rotate(-25deg); }
+        }
+
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .fade-in-delay-1 { animation-delay: 0.2s; }
+        .fade-in-delay-2 { animation-delay: 0.4s; }
+        .fade-in-delay-3 { animation-delay: 0.6s; }
+        .fade-in-delay-4 { animation-delay: 0.8s; }
+
+        .animated-section {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .animated-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        header {
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stagger-item {
+            opacity: 0;
+            animation: slideInUp 0.5s ease-out forwards;
+        }
+        
+        .project-card:hover {
+             transform: translateY(-8px);
+             box-shadow: 0 10px 15px -3px rgba(76, 201, 240, 0.1), 0 4px 6px -2px rgba(76, 201, 240, 0.05);
+             border-color: #4cc9f0; /* Softer blue accent color */
+        }
+
+        .social-icon:hover {
+            transform: translateY(-4px);
+            color: #4cc9f0; /* Softer blue accent color */
+        }
+        
+        /* Mobile Menu */
+        #mobile-menu {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .mobile-nav-link {
+            color: #ccd6f6;
+            transition: color 0.3s ease;
+        }
+        .mobile-nav-link:hover {
+            color: #4cc9f0;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    
+    <div id="scroll-avatar">
+        <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+            <!-- Back Limbs -->
+            <rect x="40" y="55" width="15" height="45" rx="7" class="avatar-limb arm-back"/>
+            <rect x="40" y="105" width="20" height="45" rx="10" class="avatar-limb leg-back"/>
+            <!-- Body and Head -->
+            <rect x="25" y="50" width="50" height="60" rx="10" class="avatar-body"/>
+            <circle cx="50" cy="25" r="20" class="avatar-body"/>
+            <!-- Front Limbs -->
+            <rect x="40" y="105" width="20" height="45" rx="10" class="avatar-limb leg-front"/>
+            <rect x="40" y="55" width="15" height="45" rx="7" class="avatar-limb arm-front"/>
+        </svg>
+    </div>
+
+    <canvas id="cursor-canvas"></canvas>
+    <canvas id="bg-bubbles-canvas"></canvas>
+
+    <!-- Header -->
+    <header class="bg-opacity-80 backdrop-blur-md sticky top-0 z-50 highlight-bg shadow-lg">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold accent-color">BKJ</a>
+            <ul class="hidden md:flex items-center space-x-8 text-sm">
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="#experience" class="nav-link">Experience</a></li>
+                <li><a href="#projects" class="nav-link">Projects</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+             <a href="mailto:bjangir266@gmail.com" class="hidden md:block border border-accent-color text-accent-color rounded-md px-4 py-2 text-sm hover:bg-accent-color hover:bg-opacity-10 transition-colors">Get In Touch</a>
+            <!-- Hamburger Button -->
+            <button id="menu-btn" class="md:hidden focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent-color" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-[60]">
+        <div class="flex justify-end p-6">
+             <button id="close-menu-btn" class="focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-accent-color" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav class="flex flex-col items-center justify-center h-full -mt-16">
+            <ul class="text-center space-y-8">
+                <li><a href="#about" class="mobile-nav-link text-3xl font-bold">About</a></li>
+                <li><a href="#experience" class="mobile-nav-link text-3xl font-bold">Experience</a></li>
+                <li><a href="#projects" class="mobile-nav-link text-3xl font-bold">Projects</a></li>
+                <li><a href="#contact" class="mobile-nav-link text-3xl font-bold">Contact</a></li>
+                 <li class="pt-4">
+                    <a href="mailto:bjangir266@gmail.com" class="border border-accent-color text-accent-color rounded-md px-6 py-3 text-lg hover:bg-accent-color hover:bg-opacity-10 transition-colors">Get In Touch</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <main class="container mx-auto px-6 md:px-12 lg:px-24 relative z-20">
+        
+        <!-- Hero Section -->
+        <section class="relative min-h-screen flex items-center justify-start text-left">
+            <div class="max-w-3xl">
+                <p class="text-lg accent-color mb-4 fade-in">Hi, my name is</p>
+                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-100 fade-in fade-in-delay-1">Bhavesh Kumar Jangir.</h1>
+                <h2 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-400 mt-2 fade-in fade-in-delay-2">I build intelligent applications.</h2>
+                <p class="mt-6 max-w-xl text-slate-400 fade-in fade-in-delay-3">
+                    I'm a software engineer with over 1.5 years of experience, specializing in full-stack development, AI integration, and real-time systems. I'm passionate about building scalable solutions and optimizing application performance.
+                </p>
+                <div class="mt-8 fade-in fade-in-delay-4">
+                    <a href="#projects" class="bg-[#4cc9f0] text-[#0a192f] font-bold py-3 px-8 rounded-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105">
+                        View My Work
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Me Section -->
+        <section id="about" class="py-24 animated-section">
+            <h2 class="text-3xl font-bold mb-8 flex items-center">
+                <span class="accent-color mr-4 text-2xl font-mono">01.</span> About Me
+                <span class="h-px bg-slate-600 flex-grow ml-6"></span>
+            </h2>
+            <div class="grid md:grid-cols-5 gap-12 items-center">
+                <div class="md:col-span-3 text-slate-400 space-y-4">
+                    <p>
+                        Hello! I'm Bhavesh, a software engineer based in Bangalore. My journey into tech has been driven by a passion for creating impactful software, from optimizing real-time video streaming to integrating cutting-edge AI models into live applications.
+                    </p>
+                    <p>
+                        With professional experience in both startup and corporate environments, I've honed my skills in back-end development, front-end frameworks, and mobile applications. I enjoy tackling complex problems and turning them into efficient, user-friendly solutions.
+                    </p>
+                    <p>Here are a few technologies I've been working with recently:</p>
+                    <ul class="grid grid-cols-2 gap-2 text-sm">
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>Python (Flask, Quart)</li>
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>TypeScript & Angular</li>
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>Kotlin & Android Dev</li>
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>WebRTC & WebSocket</li>
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>Docker</li>
+                        <li class="flex items-center"><span class="accent-color mr-2">▹</span>SQL, Redis, Firebase</li>
+                    </ul>
+                </div>
+                <div class="md:col-span-2 group">
+                    <div class="relative w-full max-w-xs mx-auto">
+                        <div class="absolute inset-0 bg-accent-color rounded-lg transform -rotate-3 group-hover:rotate-0 group-hover:scale-105 transition-transform duration-300"></div>
+                        <img src="https://placehold.co/400x400/112240/ccd6f6?text=Bhavesh" alt="Bhavesh Kumar Jangir" class="relative rounded-lg w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Experience Section -->
+        <section id="experience" class="py-24 animated-section">
+            <h2 class="text-3xl font-bold mb-12 flex items-center">
+                <span class="accent-color mr-4 text-2xl font-mono">02.</span> Where I've Worked
+                <span class="h-px bg-slate-600 flex-grow ml-6"></span>
+            </h2>
+            <div class="max-w-2xl space-y-8">
+                 <div class="relative border-l-2 border-slate-700 pl-8 py-4">
+                     <span class="absolute -left-[11px] top-5 w-5 h-5 bg-accent-color rounded-full border-4 border-[#0a192f]"></span>
+                     <h3 class="text-xl font-bold text-slate-100">Software Engineer</h3>
+                     <p class="font-medium mb-1"><a href="#" class="accent-color hover:underline">Openstream.Ai</a></p>
+                     <p class="text-sm text-slate-400 mb-4">February 2024 - Present</p>
+                     <ul class="space-y-2 text-slate-400 text-sm list-disc pl-5">
+                         <li>Migrated real-time audio/video streaming from WebSocket to WebRTC, boosting frame rate from 5-10 FPS to 25 FPS and significantly reducing latency.</li>
+                         <li>Integrated Gemini 2.0 Flash EXP model to detect and analyze objects from images, providing real-time, context-aware guidance.</li>
+                         <li>Developed a voice comparison app by integrating Azure, AWS, and Deepgram TTS APIs.</li>
+                         <li>Designed and built an Angular-based dashboard for real-time user session management.</li>
+                         <li>Dockerized Python services to improve scalability and deployment efficiency.</li>
+                     </ul>
+                 </div>
+                 <div class="relative border-l-2 border-slate-700 pl-8 py-4">
+                     <span class="absolute -left-[11px] top-5 w-5 h-5 bg-slate-600 rounded-full border-4 border-[#0a192f]"></span>
+                     <h3 class="text-xl font-bold text-slate-100">Android Developer Intern</h3>
+                     <p class="font-medium mb-1"><a href="#" class="accent-color hover:underline">Petuk Ji</a></p>
+                     <p class="text-sm text-slate-400 mb-4">September 2022 - October 2022</p>
+                     <ul class="space-y-2 text-slate-400 text-sm list-disc pl-5">
+                         <li>Engineered a fast and accurate QR code scanner using ML Kit.</li>
+                         <li>Implemented Razorpay payment integration, using multithreading to resolve order ID generation issues and ensure reliable transactions.</li>
+                     </ul>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="py-24 animated-section">
+            <h2 class="text-3xl font-bold mb-12 flex items-center">
+                 <span class="accent-color mr-4 text-2xl font-mono">03.</span> Things I've Built
+                <span class="h-px bg-slate-600 flex-grow ml-6"></span>
+            </h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Project 1 -->
+                <div class="highlight-bg rounded-lg p-6 flex flex-col justify-between border-2 border-transparent project-card transition-all duration-300">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="accent-color"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                            <div class="flex space-x-4">
+                               <a href="#" class="text-slate-400 hover:accent-color transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">Multimodal AI Integration</h3>
+                        <p class="text-slate-400 text-sm">
+                            Integrated the Gemini AI model into a live application to detect and analyze specific objects from images, delivering real-time, context-aware guidance.
+                        </p>
+                    </div>
+                    <ul class="flex flex-wrap text-xs text-slate-400 mt-6 gap-x-4 gap-y-1">
+                        <li>Python</li>
+                        <li>Gemini 2.0</li>
+                        <li>WebRTC</li>
+                        <li>System Prompts</li>
+                    </ul>
+                </div>
+                <!-- Project 2 -->
+                <div class="highlight-bg rounded-lg p-6 flex flex-col justify-between border-2 border-transparent project-card transition-all duration-300">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="accent-color"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            <div class="flex space-x-4">
+                                <a href="#" class="text-slate-400 hover:accent-color transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">Kalki - Our HealthCare</h3>
+                        <p class="text-slate-400 text-sm">
+                           An Android app for patients to upload and manage prescriptions and test reports, with automatic health card creation for remote doctor guidance.
+                        </p>
+                    </div>
+                    <ul class="flex flex-wrap text-xs text-slate-400 mt-6 gap-x-4 gap-y-1">
+                        <li>Kotlin</li>
+                        <li>Android</li>
+                        <li>Firebase</li>
+                        <li>Room DB</li>
+                    </ul>
+                </div>
+                <!-- Project 3 -->
+                <div class="highlight-bg rounded-lg p-6 flex flex-col justify-between border-2 border-transparent project-card transition-all duration-300">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="accent-color"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.5c2 .5 4-1.5 4-3.5c0-1.93-1.5-3.5-4-3.5c-1.28 0-2.45.21-3.5.5c-1.05.28-2.5.5-3.5.5c-2.5 0-4-1.5-4-3.5C5 10.57 6.5 9 9 9c1.5 0 2.75 1.06 4 1.5c2 .5 4-1.5 4-3.5C17 5.07 15.5 3.5 13 3.5c-1.28 0-2.45.21-3.5.5C8.45 4.29 7 4.5 6 4.5C3.5 4.5 2 6 2 8c0 1.93 1.5 3.5 4 3.5c1.5 0 2.75-1.06 4-1.5c2-.5 4 1.5 4 3.5c0 1.93-1.5 3.5-4 3.5c-1.28 0-2.45-.21-3.5-.5c-1.05-.28-2.5-.5-3.5-.5Z"></path></svg>
+                            <div class="flex space-x-4">
+                                <a href="#" class="text-slate-400 hover:accent-color transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">CowCare App</h3>
+                        <p class="text-slate-400 text-sm">
+                           An Android application to provide a digital platform for the management and upkeep of cow shelters, including managing donations and fundraising.
+                        </p>
+                    </div>
+                    <ul class="flex flex-wrap text-xs text-slate-400 mt-6 gap-x-4 gap-y-1">
+                        <li>Kotlin</li>
+                        <li>Android</li>
+                        <li>Donation Mgt</li>
+                        <li>Fundraising</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-24 text-center animated-section">
+            <h2 class="text-2xl font-mono accent-color mb-2">04. What's Next?</h2>
+            <h3 class="text-4xl lg:text-5xl font-extrabold text-slate-100 mb-4">Get In Touch</h3>
+            <p class="max-w-xl mx-auto text-slate-400 mb-8">
+                I'm currently open to new opportunities and my inbox is always open. Whether you have a question or just want to say hi, I'll do my best to get back to you!
+            </p>
+            <a href="mailto:bjangir266@gmail.com" class="bg-transparent border border-accent-color text-accent-color font-bold py-3 px-8 rounded-md hover:bg-accent-color hover:bg-opacity-10 transition-all duration-300 transform hover:scale-105">
+                Say Hello
+            </a>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-8 text-center text-slate-500 text-sm relative z-20">
+        <div class="flex items-center justify-center space-x-6 mb-4">
+            <a href="#" class="social-icon transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg></a>
+            <a href="#" class="social-icon transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>
+            <a href="#" class="social-icon transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-twitter"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg></a>
+        </div>
+        <p>Designed & Built by Bhavesh Kumar Jangir</p>
+    </footer>
+
+
+    <script>
+        // JS for scroll animations
+        const animatedSections = document.querySelectorAll('.animated-section');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    
+                    const listItems = entry.target.querySelectorAll('ul > li');
+                    listItems.forEach((item, index) => {
+                        item.classList.add('stagger-item');
+                        item.style.animationDelay = `${index * 100}ms`;
+                    });
+
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        animatedSections.forEach(section => {
+            observer.observe(section);
+        });
+
+        // Mobile Menu Logic
+        const menuBtn = document.getElementById('menu-btn');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('hidden');
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+             mobileMenu.classList.add('hidden');
+        });
+        
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    </script>
+    
+    <script>
+        // Combined script for all canvas animations
+
+        // Setup for Cursor Canvas (top layer)
+        const cursorCanvas = document.getElementById('cursor-canvas');
+        const cursorCtx = cursorCanvas.getContext('2d');
+        cursorCanvas.width = window.innerWidth;
+        cursorCanvas.height = window.innerHeight;
+
+        // Setup for Background Canvas (bottom layer)
+        const bgCanvas = document.getElementById('bg-bubbles-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+        
+        const header = document.querySelector('header');
+        let isMouseOverHeader = false;
+
+        let particlesArray = [];
+        let ripplesArray = [];
+        let bubblesArray = [];
+        const mouse = { x: undefined, y: undefined };
+        
+        // --- Scrolling Avatar Logic ---
+        const avatar = document.getElementById('scroll-avatar');
+        let lastMouseX = 0;
+        let moveTimeout;
+
+        // --- SMOOTHING LOGIC VARIABLES ---
+        let avatarCurrentX = 0, avatarCurrentY = 0;
+        let avatarTargetX = 0, avatarTargetY = 0;
+        let avatarScaleX = 1;
+        const smoothing = 0.08; 
+
+
+        // --- Event Listeners ---
+        header.addEventListener('mouseenter', () => { isMouseOverHeader = true; });
+        header.addEventListener('mouseleave', () => { isMouseOverHeader = false; });
+
+        window.addEventListener('resize', () => {
+            cursorCanvas.width = window.innerWidth;
+            cursorCanvas.height = window.innerHeight;
+            bgCanvas.width = window.innerWidth;
+            bgCanvas.height = window.innerHeight;
+            bubblesArray = [];
+            initBubbles();
+        });
+        
+        window.addEventListener('click', (event) => {
+            if (isMouseOverHeader) return;
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+
+            let bubbleClicked = false;
+            // Check for bubble clicks (iterate backwards for safe removal)
+            for (let i = bubblesArray.length - 1; i >= 0; i--) {
+                const bubble = bubblesArray[i];
+                const dx = mouse.x - bubble.x;
+                const dy = mouse.y - bubble.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < bubble.radius) {
+                    // Create a more powerful 'blast'
+                    // 1. Create a shockwave ripple
+                    ripplesArray.push(new Ripple(bubble.x, bubble.y));
+                    // 2. Create more particles for a bigger blast
+                    for (let j = 0; j < bubble.radius * 3; j++) {
+                        particlesArray.push(new Particle(bubble.x, bubble.y));
+                    }
+                    // 3. Remove the bubble
+                    bubblesArray.splice(i, 1);
+                    bubbleClicked = true;
+                    break; // Only pop one bubble per click
+                }
+            }
+            
+            // If no bubble was clicked, create a standard ripple on the cursor canvas
+            if (!bubbleClicked) {
+                 ripplesArray.push(new Ripple(mouse.x, mouse.y));
+            }
+        });
+
+        window.addEventListener('dblclick', (event) => {
+            if (isMouseOverHeader) return;
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+            for (let i = 0; i < 30; i++) {
+                particlesArray.push(new Particle(mouse.x, mouse.y));
+            }
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+            if (isMouseOverHeader) return;
+            for (let i = 0; i < 2; i++) {
+                particlesArray.push(new Particle(mouse.x, mouse.y));
+            }
+
+            // --- AVATAR FOLLOW CURSOR LOGIC ---
+            avatar.classList.add('is-moving'); 
+            clearTimeout(moveTimeout);
+            moveTimeout = setTimeout(() => {
+                avatar.classList.remove('is-moving');
+            }, 150);
+
+            avatarTargetX = event.clientX - avatar.offsetWidth / 2;
+            avatarTargetY = event.clientY - avatar.offsetHeight / 2;
+
+            if (event.clientX > lastMouseX) {
+                avatarScaleX = 1; // Face right
+            } else if (event.clientX < lastMouseX) {
+                avatarScaleX = -1; // Face left
+            }
+            lastMouseX = event.clientX;
+        });
+        
+        // --- Animation Classes ---
+        class CursorDot {
+            constructor() {
+                this.x = 0;
+                this.y = 0;
+                this.size = 4;
+                this.color = '#4cc9f0';
+            }
+            update(x, y) { this.x = x; this.y = y; }
+            draw() {
+                cursorCtx.fillStyle = this.color;
+                cursorCtx.beginPath();
+                cursorCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                cursorCtx.fill();
+            }
+        }
+
+        class Ripple {
+            constructor(x,y) {
+                this.x = x; this.y = y;
+                this.radius = 10; this.opacity = 1;
+                this.color = `rgba(76, 201, 240, ${this.opacity})`;
+                this.lineWidth = 2;
+            }
+            update() {
+                this.radius += 2;
+                this.opacity -= 0.02;
+                this.color = `rgba(76, 201, 240, ${this.opacity})`;
+            }
+            draw() {
+                cursorCtx.strokeStyle = this.color;
+                cursorCtx.lineWidth = this.lineWidth;
+                cursorCtx.beginPath();
+                cursorCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                cursorCtx.stroke();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 4 + 1;
+                // Increased speed for a more explosive 'blast'
+                this.speedX = Math.random() * 5 - 2.5; 
+                this.speedY = Math.random() * 5 - 2.5;
+                this.color = 'hsla(196, 86%, 62%, 0.8)';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+            draw() {
+                cursorCtx.fillStyle = this.color;
+                cursorCtx.beginPath();
+                cursorCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                cursorCtx.fill();
+            }
+        }
+
+        class Bubble {
+            constructor() {
+                this.x = Math.random() * bgCanvas.width;
+                this.y = bgCanvas.height + Math.random() * 50;
+                this.radius = Math.random() * 10 + 2;
+                this.speedY = Math.random() * 0.8 + 0.2; // Slower speed
+                this.opacity = this.radius / 15;
+                this.color = `rgba(23, 107, 135, ${this.opacity})`; // Darker color
+            }
+            update() {
+                this.y -= this.speedY;
+                if (this.y < -this.radius) {
+                    this.y = bgCanvas.height + this.radius;
+                    this.x = Math.random() * bgCanvas.width;
+                    this.radius = Math.random() * 10 + 2;
+                    this.speedY = Math.random() * 0.8 + 0.2; // Slower speed
+                    this.opacity = this.radius / 15;
+                    this.color = `rgba(23, 107, 135, ${this.opacity})`; // Darker color
+                }
+            }
+            draw() {
+                bgCtx.fillStyle = this.color;
+                bgCtx.beginPath();
+                bgCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                bgCtx.fill();
+            }
+        }
+
+        // --- Animation Loop ---
+        const cursorDot = new CursorDot();
+        
+        function handleCursorEffects() {
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+                if (particlesArray[i].size <= 0.3) {
+                    particlesArray.splice(i, 1);
+                    i--;
+                }
+            }
+            for (let i = 0; i < ripplesArray.length; i++) {
+                ripplesArray[i].update();
+                ripplesArray[i].draw();
+                 if (ripplesArray[i].opacity <= 0) {
+                    ripplesArray.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        function initBubbles() {
+            const bubbleCount = Math.floor(bgCanvas.width / 50);
+            for (let i = 0; i < bubbleCount; i++) {
+                bubblesArray.push(new Bubble());
+            }
+        }
+        
+        function animate() {
+            // Animate cursor canvas (top layer)
+            cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+            handleCursorEffects();
+            if (!isMouseOverHeader) {
+                cursorDot.update(mouse.x, mouse.y);
+                cursorDot.draw();
+            }
+
+            // Animate background canvas (bottom layer)
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            for (let i = 0; i < bubblesArray.length; i++) {
+                bubblesArray[i].update();
+                bubblesArray[i].draw();
+            }
+            
+            // --- SMOOTH AVATAR ANIMATION ---
+            avatarCurrentX += (avatarTargetX - avatarCurrentX) * smoothing;
+            avatarCurrentY += (avatarTargetY - avatarCurrentY) * smoothing;
+            avatar.style.transform = `translateX(${avatarCurrentX}px) translateY(${avatarCurrentY}px) scaleX(${avatarScaleX})`;
+
+            requestAnimationFrame(animate);
+        }
+        
+        window.addEventListener('load', () => {
+             // Snap to initial position without animation in the bottom-right corner
+            avatarTargetX = window.innerWidth - avatar.offsetWidth - 20; // 20px padding from edge
+            avatarTargetY = window.innerHeight - avatar.offsetHeight - 20; // 20px padding from edge
+            avatarCurrentX = avatarTargetX;
+            avatarCurrentY = avatarTargetY;
+        });
+
+        initBubbles();
+        animate();
+    </script>
+</body>
+</html>
+
